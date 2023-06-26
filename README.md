@@ -4,7 +4,7 @@ This is the server-side component of a “movies” web application. The web app
 
 ## Features
 
-- 
+-
 
 ## Usage
 
