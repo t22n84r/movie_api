@@ -1,207 +1,571 @@
 const express = require('express'),
-    app = express(),
-    morgan = require('morgan'),
-    bodyParser = require('body-parser'),
-    uuid = require('uuid');
+  app = express(),
+  morgan = require('morgan'),
+  uuid = require('uuid'),
+  swaggerJsdoc = require("swagger-jsdoc"),
+  swaggerUi = require("swagger-ui-express"),
+  mongoose = require('mongoose'),
+  Models = require('./models.js');
+
+const movies = Models.Movie;
+const users = Models.User;
+
+mongoose.connect('mongodb://127.0.0.1:27017/myFlixDB', { useNewUrlParser: true, useUnifiedTopology: true });
+
+app.use(express.json());
+
+app.use(express.urlencoded({ extended: true }));
 
 app.use(morgan('common'));
 
-app.use(bodyParser.json());
-
-let users = [
-  {
-    id: 0,
-    username: "jack654",
-    email: "jack654@placeholder.com",
-    favoriteMovies: []
-  },
-  {
-    id: 1,
-    username: "sarah987",
-    email: "sarah987@placeholder.com",
-    favoriteMovies: ["Interstellar"]
-  }
-];
-
-let movies = [
-  {
-    Title: "Interstellar",
-    Description: "In Earth's future, a global crop blight and second Dust Bowl are slowly rendering the planet uninhabitable. Professor Brand (Michael Caine), a brilliant NASA physicist, is working on plans to save mankind by transporting Earth's population to a new home via a wormhole. But first, Brand must send former NASA pilot Cooper (Matthew McConaughey) and a team of researchers through the wormhole and across the galaxy to find out which of three planets could be mankind's new home.",
-    Genre : [ "Adventure", "Science fiction", "Drama" ],
-    Director: [{
-      Name: "Christopher Nolan",
-      Bio: "Christopher Edward Nolan was born on 30 July 1970, in Westminster, London is a British and American filmmaker and screenwriter. His father, Brendan, was a British advertising executive who worked as a creative director. His mother, Christina, was an American flight attendant from Evanston, Illinois; she would later work as a teacher of English. He has an elder brother, Matthew, and a younger brother, Jonathan, also a filmmaker. Christopher Nolan is Known for his Hollywood blockbusters with complex storytelling, Nolan is considered a leading filmmaker of the 21st century. His films have grossed $5 billion worldwide. The recipient of many accolades, he has been nominated for five Academy Awards, five BAFTA Awards and six Golden Globe Awards. In 2015, he was listed as one of the 100 most influential people in the world by Time, and in 2019, he was appointed Commander of the Order of the British Empire for his contributions to film.",
-      Born: 1970
-  }],
-  ImageURL: "https://m.media-amazon.com/images/M/MV5BNzM4ODUzZjAtNmFhNi00N2VhLTk3NTAtNDNiYTY2MzE2MTE5XkEyXkFqcGdeQXVyNTc3MjUzNTI@.jpg",
-  Featured: true
-  },
-  {
-    Title: "The Lord of the Rings",
-    Description: "Set in the fictional world of Middle-earth, the films follow the hobbit Frodo Baggins as he and the Fellowship embark on a quest to destroy the One Ring, to ensure the destruction of its maker, the Dark Lord Sauron. The Fellowship eventually splits up and Frodo continues the quest with his loyal companion Sam and the treacherous Gollum. Meanwhile, Aragorn, heir in exile to the throne of Gondor, along with the elf Legolas, the dwarf Gimli, Merry, Pippin, and the wizard Gandalf, unite to save the Free Peoples of Middle-earth from the forces of Sauron and rally them in the War of the Ring to aid Frodo by distracting Sauron's attention.",
-    Genre : [ "Adventure", "Action", "Drama" ],
-    Director: [{
-      Name: "Peter Jackson",
-      Bio: "Sir Peter Robert Jackson (born 31 October 1961) is a New Zealand film director, screenwriter and producer. He was born in Wellington and was raised in its far northern suburb of Pukerua Bay. His parents – Joan a factory worker and housewife, and William Bill Jackson, a wages clerk – were emigrants from England. Peter Jackson is best known as the director, writer and producer of the Lord of the Rings trilogy (2001–2003) and the Hobbit trilogy (2012–2014), both of which are adapted from the novels of the same name by J. R. R. Tolkien. Other notable films include the critically lauded drama Heavenly Creatures (1994), the horror comedy The Frighteners (1996), the epic monster remake film King Kong (2005), the World War I documentary film They Shall Not Grow Old (2018) and the documentary The Beatles: Get Back (2021). He is the fourth-highest-grossing film director of all-time, his films having made over $6.5 billion worldwide.",
-      Born: 1961
-    }],
-    ImageURL: "https://upload.wikimedia.org/wikipedia/en/2/23/The_Lord_of_the_Rings%2C_TROTK_%282003%29.jpg",
-    Featured: true
-  },
-  {
-    Title: "Cloud Atlas",
-    Description: "An exploration of how the actions of individual lives impact one another in the past, present and future, as one soul is shaped from a killer into a hero, and an act of kindness ripples across centuries to inspire a revolution.",
-    Genre : [ "Mystery", "Science fiction", "Drama" ],
-    Director: [{
-      Name: "The Wachowskis",
-      Bio: "Lana Wachowski (born June 21, 1965; formerly known as Larry Wachowski) and Lilly Wachowski (born December 29, 1967; formerly known as Andy Wachowski) are American film and television directors, writers and producers. Their mother, Lynne Luckinbill, was a nurse and painter. Their father, Ron Wachowski, was a businessman of Polish descent. Their uncle is an actor and Primetime Emmy Award–winning producer, Laurence Luckinbill. Ron and Lynne died five weeks apart in the late 2010s. Lana and Lilly have two other sisters, Julie and Laura.Julie was assistant coordinator for the film Bound; she is a novelist and screenwriter. The Wachowskis sisters have worked as a writing and directing team through most of their careers. They made their directing debut in 1996 with Bound and achieved fame with their second film, The Matrix (1999), a major box office success for which they won the Saturn Award for Best Director. They wrote and directed its two sequels, The Matrix Reloaded and The Matrix Revolutions (both in 2003), and were involved in the writing and production of other works in the Matrix franchise.",
-      Born: [1965, 1967]
-    }, {
-      Name: "Tom Tykwer",
-      Bio: "Tom Tykwer (born 23 May 1965) is a German film director, producer, screenwriter, and composer. He is best known internationally for directing the thriller films Run Lola Run (1998), Heaven (2002), Perfume: The Story of a Murderer (2006), and The International (2009). He collaborated with The Wachowskis as co-director for the science fiction film Cloud Atlas (2012) and the Netflix series Sense8 (2015–2018), and worked on the score for Lana Wachowski's The Matrix Resurrections (2021). Tykwer is also well known as the co-creator of the internationally acclaimed German television series Babylon Berlin (2017–). Tykwer was born in Wuppertal, West Germany. Fascinated by film from an early age, he started making amateur Super 8 films at the age of eleven. He later helped out at a local arthouse cinema in order to see more films, including those for which he was too young to buy tickets. After graduating from high school, he applied to numerous film schools around Europe, unsuccessfully.",
-      Born: 1965
-    }],
-    ImageURL: "https://m.media-amazon.com/images/M/MV5BMTczMTgxMjc4NF5BMl5BanBnXkFtZTcwNjM5MTA2OA@@.jpg",
-    Featured: true
-  }
-];
-
-let genres = [
-
-  { Name: "Adventure",
-    Description: "An adventure story feautures a protagonist who journeys to epic or distant places to accomplish something. Main plot elements include quests for lost continents, a jungle or desert settings, characters going on a treasure hunts and heroic journeys into the unknown. Adventure films are mostly set in a period background and may include adapted stories of historical or fictional adventure heroes within the historical context."},
-
-  { Name: "Science fiction",
-    Description: "Science fiction (or sci-fi) is a film genre that uses speculative, fictional science-based depictions of phenomena that are not fully accepted by mainstream science, such as extraterrestrial lifeforms, spacecraft, robots, cyborgs, dinosaurs, mutants, interstellar travel, time travel, or other technologies. Science fiction films have often been used to focus on political or social issues, and to explore philosophical issues like the human condition."},
-
-  { Name: "Drama",
-    Description: "Drama is a genre of narrative fiction (or semi-fiction) intended to be more serious than humorous in tone, focusing on in-depth development of realistic characters who must deal with realistic emotional struggles."},
-
-  { Name: "Mystery",
-    Description: "A mystery story follows an investigator as they attempt to solve a puzzle. The details and clues are presented as the story continues and the protagonist discovers them and by the end of the story the mystery is solved."},
-
-  { Name: "Action",
-    Description: "Action genre is generally defined by risk and stakes. Action films tend to feature a resourceful character struggling against life-threatening situations which generally conclude in victory for the hero."}
-
-];
-
-app.get('/', (req, res) => {                                            // Read operation for homepage
+/*app.get('/', (req, res) => {                                            // Read operation for homepage
   res.send('Welcome to my movie database');
-});
+});*/
 
-app.post('/users', (req, res) => {                                      // Create operation for adding new user
-  const newUser = req.body;
-
-  if (newUser.username) {
-    newUser.id = uuid.v4();
-    users.push(newUser);
-    res.status(201).json(newUser);
-  } else {
-    const message = 'Missing name in request body';
-    res.status(400).send(message);
+app.post('/users', async (req, res) => {                                      // Create operation for adding new user
+/*
+#swagger.parameters["obj"] = {
+  in: "body",
+  description: "Details of the user to be addded.",
+  schema: {
+    "username": "username of the user",
+    "password": "password of the user",
+    "email": "email of the user",
+    "birthday": "Date of birth of the user"
   }
-});
-
-app.put('/users/:username', (req, res) => {                             // UPDATE username for existing users
-  const {username} = req.params;
-  const updatedUser = req.body;
-  let user = users.find((user) => { return user.username === username });
-
-  if (user) {
-    user.username = updatedUser.username;
-    res.status(200).json(user);
-  } else {
-    res.status(404).send('User with the username ' + req.params.username + ' was not found.');
-  }
-});
-
-app.put('/users/:username/:movieTitle', (req, res) => {                             // UPDATE favorite movies for existing users
-  const {username, movieTitle} = req.params;
-
-  let user = users.find((user) => { return user.username === username });
-
-  if (user) {
-    user.favoriteMovies.push(movieTitle);
-    res.status(200).send(`${movieTitle} has been added to user ${user.username}'s list.`);
-  } else {
-    res.status(400);
-  }
-});
-
-app.delete('/users/:username/:movieTitle', (req, res) => {                             // DELETE favorite movies for existing users
-  const {username, movieTitle} = req.params;
-
-  let user = users.find((user) => { return user.username === username });
-
-  if (user) {
-    user.favoriteMovies = user.favoriteMovies.filter(title => title !== movieTitle);
-    res.status(200).send(`${movieTitle} has been removed from ${user.username}'s list.`);
-  } else {
-    res.status(400);
-  }
-});
-
-app.delete('/users', (req, res) => {                                        // DELETE a user from array
-  const deletedUser = req.body;
-
-  let user = users.find((user) => { return user.username === deletedUser.username });
-
-  if (user) {
-    users = users.filter(user => user.username !== deletedUser.username);
-    res.status(200).send(`User ${deletedUser.username} has been deleted.`);
-  } else {
-    res.status(400);
-  }
-});
-
-app.get('/movies/:title', (req, res) => {                               // Read operation to find a single movie by title
-const {title} = req.params;
-const movie = movies.find((movie) => movie.Title === title);
-
-if (movie) {
-  res.status(200).json(movie);
-} else {
-  res.status(404).send('No such movie!!')
 }
-
+#swagger.responses[200] = {
+  "description": "Details of the user that was added.",
+  "schema": {
+    "data": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "The username of the user."
+        },
+        "password": {
+          "type": "string",
+          "description": "The password of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email of the user."
+        },
+        "birthday": {
+          "type": "date",
+          "description": "The birthday of the user."
+        }
+      }
+    }
+  }
+}
+*/
+  await users.findOne({ username: req.body.username })
+    .then((user) => {
+      if (user) {
+        return res.status(400).send(req.body.username + 'already exists');
+      } else {
+        users
+          .create({
+            username: req.body.username,
+            password: req.body.password,
+            email: req.body.email,
+            birthday: req.body.birthday
+          })
+          .then((user) =>{res.status(201).json(user) })
+        .catch((error) => {
+          console.error(error);
+          res.status(500).send('Error: ' + error);
+        })
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).send('Error: ' + error);
+    });
 });
 
-app.get('/movies/director/:directorName', (req, res) => {                // Read operation to find a director by name
+app.put('/users/:username', async (req, res) => {                             // UPDATE username for existing users
+/*
+#swagger.parameters["username"] = {
+  in: "path",
+  description: "The username of the user.",
+  required: true,
+  type: "string"
+}
+#swagger.parameters["obj"] = {
+  in: "body",
+  description: "Info fields of the user that can be updated. Fields that are not being updated should be removed from the request body",
+  schema: {
+    "username": "username of the user",
+    "password": "password of the user",
+    "email": "email of the user",
+    "birthday": "Date of birth of the user"
+  }
+}
+#swagger.responses[200] = {
+  "description": "Details of the user with the updated field.",
+  "schema": {
+    "data": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "The username of the user."
+        },
+        "password": {
+          "type": "string",
+          "description": "The password of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email of the user."
+        },
+        "birthday": {
+          "type": "date",
+          "description": "The birthday of the user."
+        },
+        "favoriteMovies": {
+          "type": "array",
+          "description": "List of favorite movies of the user."
+        }
+      }
+    }
+  }
+}
+*/
+  await users.findOneAndUpdate({ username: req.params.username },
+    { $set:
+    {
+      username: req.body.username,
+      password: req.body.password,
+      email: req.body.email,
+      birthday: req.body.birthday
+    }
+  },
+  { new: true })                                                                  // This line makes sure that the updated document is returned
+  .then((updatedUser) => {
+    res.status(200).json(updatedUser);
+  })
+  .catch((error) => {
+    console.error(error);
+    res.status(500).send('Error: ' + error);
+  });
+});
+
+app.put('/users/:username/:movieID', async (req, res) => {                             // UPDATE favorite movies for existing users
+/*
+#swagger.parameters["username"] = {
+  in: "path",
+  description: "The username of the user.",
+  required: true,
+  type: "string"
+}
+#swagger.parameters["movieID"] = {
+  in: "path",
+  description: "ID of the movie that needs to be added",
+  required: true,
+  type: "string"
+}
+#swagger.responses[200] = {
+  "description": "Details of the user with the updated favorite movies list.",
+  "schema": {
+    "data": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "The username of the user."
+        },
+        "password": {
+          "type": "string",
+          "description": "The password of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email of the user."
+        },
+        "birthday": {
+          "type": "date",
+          "description": "The birthday of the user."
+        },
+        "favoriteMovies": {
+          "type": "array",
+          "description": "List of favorite movies of the user."
+        }
+      }
+    }
+  }
+}
+*/
+  await users.findOneAndUpdate({ username: req.params.username }, {
+    $addToSet: { favoriteMovies: req.params.movieID }
+  },
+  { new: true })                                                                 // This line makes sure that the updated document is returned
+ .then((updatedUser) => {
+   res.status(200).json(updatedUser);
+  })
+  .catch((error) => {
+    console.error(error);
+    res.status(500).send('Error: ' + error);
+  });
+});
+
+app.delete('/users/:username/:movieID', async (req, res) => {                             // DELETE favorite movies for existing users
+/*
+#swagger.parameters["username"] = {
+  in: "path",
+  description: "The username of the user.",
+  required: true,
+  type: "string"
+}
+#swagger.parameters["movieID"] = {
+  in: "path",
+  description: "ID of the movie that needs to be deleted.",
+  required: true,
+  type: "string"
+}
+#swagger.responses[200] = {
+  "description": "Details of the user with the updated favorite movies list.",
+  "schema": {
+    "data": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "The username of the user."
+        },
+        "password": {
+          "type": "string",
+          "description": "The password of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email of the user."
+        },
+        "birthday": {
+          "type": "date",
+          "description": "The birthday of the user."
+        },
+        "favoriteMovies": {
+          "type": "array",
+          "description": "List of favorite movies of the user."
+        }
+      }
+    }
+  }
+}
+*/
+  await users.findOneAndUpdate({ username: req.params.username }, {
+    $pull: { favoriteMovies: req.params.movieID }
+  },
+  { new: true })                                                                 // This line makes sure that the updated document is returned
+ .then((updatedUser) => {
+   res.status(200).json(updatedUser);
+  })
+  .catch((error) => {
+    console.error(error);
+    res.status(500).send('Error: ' + error);
+  });
+});
+
+app.delete('/users', async (req, res) => {                                        // DELETE a user from array
+/*
+#swagger.parameters["obj"] = {
+  in: "body",
+  description: "Details of the user to be deleted.",
+  schema: {
+    "username": "username of the user to be deleted",
+  }
+}
+#swagger.responses[200] = {
+  "description": "A message with the username of the user that was deleted",
+}
+#swagger.responses[400] = {
+  "description": "A message saying that the username of the user was not found",
+}
+*/
+  await users.findOneAndRemove({ username: req.body.username })
+    .then((user) => {
+      if (!user) {
+        res.status(400).send(req.body.username + ' was not found');
+      } else {
+        res.status(200).send(req.body.username + ' was deleted.');
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send('Error: ' + err);
+    });
+});
+
+app.get('/movies/:title', async (req, res) => {                               // Read operation to find a single movie by title
+/*
+#swagger.parameters["title"] = {
+  in: "path",
+  description: "The title of the movie.",
+  required: true,
+  type: "string"
+}
+#swagger.responses[200] = {
+  "description": "Details of a movie that was searched by title.",
+  "schema": {
+    "data": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The title of the movie."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the movie."
+        },
+        "director": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The name of the director."
+              },
+              "bio": {
+                "type": "string",
+                "description": "A brief biography of the director."
+              },
+              "birthyear": {
+                "type": "string",
+                "description": "The birthyear of the director."
+              },
+              "deathyear": {
+                "type": "string",
+                "description": "The deathyear of the director."
+              }
+            }
+          }
+        },
+        "genre": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "The name of the director."
+                },
+                "description": {
+                  "type": "string",
+                  "description": "A brief biography of the director."
+                }
+              }
+            }
+          },
+        "imageURL": {
+          "type": "string",
+          "description": "The URL of the movie poster."
+        },
+        "featured": {
+          "type": "boolean",
+          "description": "Whether or not the movie is featured."
+        }
+      }
+    }
+  }
+}
+*/
+  await movies.findOne ({title: req.params.title})
+    .then ((movie) => {
+      res.status(200).json(movie);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send('Error: ' + err);
+    });
+});
+
+app.get('/movies/director/:directorName', async (req, res) => {                // Read operation to find a director by name
+/*
+#swagger.parameters["directorName"] = {
+  in: "path",
+  description: "The name of director.",
+  required: true,
+  type: "string"
+}
+#swagger.responses[200] = {
+  "description": "Details of the director that was searched by name.",
+  "schema": {
+    "data": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the director."
+        },
+        "bio": {
+          "type": "string",
+          "description": "A brief life history of the director."
+        },
+        "birthyear": {
+          "type": "string",
+          "description": "The birthyear of the director."
+        },
+        "deathyear": {
+          "type": "string",
+          "description": "The deathyear of the director."
+        }
+      }
+    }
+  }
+}
+*/
   const {directorName} = req.params;
-  const director = movies
-    .flatMap((movie) => movie.Director)
-    .find((director) => director.Name === directorName);
-  
-  if (director) {
-    res.status(200).json(director);
-  } else {
-    res.status(400).send('No such director!!')
+
+  await movies.findOne ({ 'director.name':directorName })
+
+    .then((movie) => {
+      res.status(200).json(movie.director);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send('Error: ' + err);
+    });
+});
+
+app.get('/movies', async (req, res) => {                                        // Read opeartion to get all movies in the database
+/*
+#swagger.responses[200] = {
+  "description": "A list of movies.",
+  "schema": {
+    "data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "The title of the movie."
+          },
+          "description": {
+            "type": "string",
+            "description": "A brief description of the movie."
+          },
+          "director": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "The name of the director."
+                },
+                "bio": {
+                  "type": "string",
+                  "description": "A brief biography of the director."
+                },
+                "birthyear": {
+                  "type": "string",
+                  "description": "The birthyear of the director."
+                },
+                "deathyear": {
+                  "type": "string",
+                  "description": "The deathyear of the director."
+                }
+              }
+            }
+          },
+          "genre": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "The name of the director."
+                },
+                "description": {
+                  "type": "string",
+                  "description": "A brief biography of the director."
+                }
+              }
+            }
+          },
+          "imageURL": {
+            "type": "string",
+            "description": "The URL of the movie poster."
+          },
+          "featured": {
+            "type": "boolean",
+            "description": "Whether or not the movie is featured."
+          }
+        }
+      }
+    }
+    }
   }
-  
+}
+*/
+  await movies.find()
+    .then((movies) => {
+      res.status(200).json(movies);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send('Error: ' + err);
+    });
 });
 
-app.get('/movies', (req, res) => {                                        // Read opeartion to get all movies in the database
-  res.status(200).json(movies);
-});
-
-app.get('/genres/:name', (req, res) => {                                  // Read operation to get a genre description by name
+app.get('/genres/:name', async (req, res) => {                                  // Read operation to get a genre description by name
+/*
+#swagger.parameters["name"] = {
+  in: "path",
+  description: "The name of genre.",
+  required: true,
+  type: "string"
+}
+#swagger.responses[200] = {
+  "description": "Details of the genre that was searched by name.",
+  "schema": {
+    "data": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the genre."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief definition of the genre ."
+        }
+      }
+    }
+  }
+}
+*/
   const {name} = req.params;
-  const genre = genres.find((genre) => genre.Name === name);
-  
-  if (genre) {
-    res.status(200).json(genre);
-  } else {
-    res.status(400).send('No such genre!!')
-  }
-  
+
+  await movies.findOne ({ 'genre.name': name })
+
+  .then((movie) => {
+    res.status(200).json(movie.genre);
+  })
+  .catch((err) => {
+    console.error(err);
+    res.status(500).send('Error: ' + err);
+  });
 });
 
-app.use('/', express.static('public'));                                    // serve the documentation webpage
+//app.use('/', express.static('public'));                                    // serve the documentation webpage
 
 app.use((err, req, res, next) => {                                          // catch unknown error
 console.error(err.stack);
 res.status(500).send('Something broke!');
 });
+
+const swaggerDocument = require('./swagger-output.json');
+
+app.use( "/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.listen(8080, () => {                                                     // server listening port
 console.log('Your app is listening on port 8080.');
