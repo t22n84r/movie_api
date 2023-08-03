@@ -2,8 +2,8 @@ const express = require('express'),
   app = express(),
   morgan = require('morgan'),
   uuid = require('uuid'),
-  swaggerJsdoc = require("swagger-jsdoc"),
-  swaggerUi = require("swagger-ui-express"),
+  swaggerJsdoc = require('swagger-jsdoc'),
+  swaggerUi = require('swagger-ui-express'),
   mongoose = require('mongoose'),
   Models = require('./models.js');
 
@@ -15,6 +15,10 @@ mongoose.connect('mongodb://127.0.0.1:27017/myFlixDB', { useNewUrlParser: true, 
 app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
+
+let auth = require('./auth.js')(app)
+const passport = require('passport');
+require('./passport.js')
 
 app.use(morgan('common'));
 
@@ -86,7 +90,7 @@ app.post('/users', async (req, res) => {                                      //
     });
 });
 
-app.put('/users/:username', async (req, res) => {                             // UPDATE username for existing users
+app.put('/users/:username', passport.authenticate('jwt', { session: false }), async (req, res) => {                             // UPDATE username for existing users
 /*
 #swagger.parameters["username"] = {
   in: "path",
@@ -135,6 +139,10 @@ app.put('/users/:username', async (req, res) => {                             //
   }
 }
 */
+  if (req.user.username !== req.params.username) {
+    return res.status(401).send('Permission denied');
+  }
+
   await users.findOneAndUpdate({ username: req.params.username },
     { $set:
     {
@@ -154,7 +162,7 @@ app.put('/users/:username', async (req, res) => {                             //
   });
 });
 
-app.put('/users/:username/:movieID', async (req, res) => {                             // UPDATE favorite movies for existing users
+app.put('/users/:username/:movieID', passport.authenticate('jwt', { session: false }), async (req, res) => {                             // UPDATE favorite movies for existing users
 /*
 #swagger.parameters["username"] = {
   in: "path",
@@ -199,6 +207,10 @@ app.put('/users/:username/:movieID', async (req, res) => {                      
   }
 }
 */
+  if (req.user.username !== req.params.username) {
+    return res.status(401).send('Permission denied');
+  }
+
   await users.findOneAndUpdate({ username: req.params.username }, {
     $addToSet: { favoriteMovies: req.params.movieID }
   },
@@ -212,7 +224,7 @@ app.put('/users/:username/:movieID', async (req, res) => {                      
   });
 });
 
-app.delete('/users/:username/:movieID', async (req, res) => {                             // DELETE favorite movies for existing users
+app.delete('/users/:username/:movieID', passport.authenticate('jwt', { session: false }), async (req, res) => {                             // DELETE favorite movies for existing users
 /*
 #swagger.parameters["username"] = {
   in: "path",
@@ -270,7 +282,7 @@ app.delete('/users/:username/:movieID', async (req, res) => {                   
   });
 });
 
-app.delete('/users', async (req, res) => {                                        // DELETE a user from array
+app.delete('/users', passport.authenticate('jwt', { session: false }), async (req, res) => {                                        // DELETE a user from array
 /*
 #swagger.parameters["obj"] = {
   in: "body",
@@ -286,6 +298,10 @@ app.delete('/users', async (req, res) => {                                      
   "description": "A message saying that the username of the user was not found",
 }
 */
+  if (req.user.username !== req.body.username) {
+    return res.status(401).send('Permission denied');
+  }
+
   await users.findOneAndRemove({ username: req.body.username })
     .then((user) => {
       if (!user) {
@@ -300,7 +316,7 @@ app.delete('/users', async (req, res) => {                                      
     });
 });
 
-app.get('/movies/:title', async (req, res) => {                               // Read operation to find a single movie by title
+app.get('/movies/:title', passport.authenticate('jwt', { session: false }), async (req, res) => {                               // Read operation to find a single movie by title
 /*
 #swagger.parameters["title"] = {
   in: "path",
@@ -385,7 +401,7 @@ app.get('/movies/:title', async (req, res) => {                               //
     });
 });
 
-app.get('/movies/director/:directorName', async (req, res) => {                // Read operation to find a director by name
+app.get('/movies/director/:directorName', passport.authenticate('jwt', { session: false }), async (req, res) => {                // Read operation to find a director by name
 /*
 #swagger.parameters["directorName"] = {
   in: "path",
@@ -433,8 +449,9 @@ app.get('/movies/director/:directorName', async (req, res) => {                /
     });
 });
 
-app.get('/movies', async (req, res) => {                                        // Read opeartion to get all movies in the database
+app.get('/movies', passport.authenticate('jwt', { session: false }), async (req, res) => {                                        // Read opeartion to get all movies in the database
 /*
+#swagger.security = [{"BearerAuth": []}]
 #swagger.responses[200] = {
   "description": "A list of movies.",
   "schema": {
@@ -516,7 +533,7 @@ app.get('/movies', async (req, res) => {                                        
     });
 });
 
-app.get('/genres/:name', async (req, res) => {                                  // Read operation to get a genre description by name
+app.get('/genres/:name', passport.authenticate('jwt', { session: false }), async (req, res) => {                                  // Read operation to get a genre description by name
 /*
 #swagger.parameters["name"] = {
   in: "path",
