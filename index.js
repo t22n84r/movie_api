@@ -5,12 +5,43 @@ const express = require('express'),
   swaggerJsdoc = require('swagger-jsdoc'),
   swaggerUi = require('swagger-ui-express'),
   mongoose = require('mongoose'),
-  Models = require('./models.js');
+  Models = require('./models.js'),
+  cors = require('cors'),
+  {check, validationResult, body, param} = require('express-validator');
 
 const movies = Models.Movie;
 const users = Models.User;
 
-mongoose.connect('mongodb://127.0.0.1:27017/myFlixDB', { useNewUrlParser: true, useUnifiedTopology: true });
+/*let allowedOrigins = ['http://localhost:8080', 'http://testsite.com'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) === -1) {
+      let message = "The CORS policy for this application doesn't allow access from origin" + origin;
+      return callback(new Error(message), false);
+    }
+    return callback (null, true);
+  }
+}));*/
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests from all origins
+    callback(null, true);
+  }
+}));
+
+mongoose.connect( process.env.CONNECTION_URI , { 
+  useNewUrlParser: true, useUnifiedTopology: true 
+})   .then(() => {
+  console.log('Connected to MongoDB Atlas.');
+})
+.catch((err) => {
+  console.error('Error connecting to MongoDB:', err);
+});
 
 app.use(express.json());
 
@@ -22,20 +53,68 @@ require('./passport.js')
 
 app.use(morgan('common'));
 
-/*app.get('/', (req, res) => {                                            // Read operation for homepage
-  res.send('Welcome to my movie database');
-});*/
+app.post('/users', [
 
-app.post('/users', async (req, res) => {                                      // Create operation for adding new user
+  body('username').isLength({min: 5, max:10}).withMessage("Username is required and should be at least 5 characters long.")
+    .isAlphanumeric().withMessage("Username can only contain alphanumeric characters."),
+
+  body('password').isLength({min:8, max:16}).withMessage("Password is required and should be at least 8 characters long.")
+    .isAlphanumeric().withMessage("Password has to Alphanumeric, no other characters allowed."),
+
+  body('confirmPassword').notEmpty().withMessage("Please confirm your password.")
+  .custom((value, { req }) => {
+    if (value !== req.body.password) {
+      throw new Error('Passwords do not match.');
+    }
+    return true;
+  }),
+
+  body('email').isEmail().withMessage("Invalid email."),
+
+  body('birthday').isDate().withMessage("Invalid date, supported date format is YYYY-MM-DD.")
+
+], async (req, res) => {                                      // Create operation for adding new user
 /*
-#swagger.parameters["obj"] = {
-  in: "body",
-  description: "Details of the user to be addded.",
-  schema: {
-    "username": "username of the user",
-    "password": "password of the user",
-    "email": "email of the user",
-    "birthday": "Date of birth of the user"
+#swagger.requestBody = {
+  required: true,
+  content: {
+    "application/json": {
+      description: "Details of the user to be added.",
+      schema: {
+        "data": {
+          "type": "object",
+          "properties": {
+            "username": {
+            "type": "string",
+            "description": "The username of the user."
+            },
+            "password": {
+            "type": "string",
+            "description": "The password of the user."
+            },
+            "confirmPassword": {
+            "type": "string",
+            "description": "The password again for confirmation."
+            },
+            "email": {
+            "type": "string",
+            "description": "email of the user"
+            },
+            "birthday": {
+            "type": "date",
+            "description": "Date of birth of the user"
+            }
+          }
+        },
+        "example": {
+          "username": "johndoe",
+          "password": "secret",
+          "confirmPassword": "secret",
+          "email": "example@example.com",
+          "birthday" : "1999-09-29"
+        }
+      }
+    }
   }
 }
 #swagger.responses[200] = {
@@ -59,12 +138,22 @@ app.post('/users', async (req, res) => {                                      //
         "birthday": {
           "type": "date",
           "description": "The birthday of the user."
+        },
+        "favoriteMovies": {
+          "type": "array",
+          "description": "List of favorite movies of the user."
         }
       }
     }
   }
 }
 */
+  let errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+
   await users.findOne({ username: req.body.username })
     .then((user) => {
       if (user) {
@@ -90,22 +179,62 @@ app.post('/users', async (req, res) => {                                      //
     });
 });
 
-app.put('/users/:username', passport.authenticate('jwt', { session: false }), async (req, res) => {                             // UPDATE username for existing users
+app.put('/users/:username', [
+
+  body('username').optional().isLength({min: 5, max:10}).withMessage("Username is required and should be at least 5 characters long.")
+    .isAlphanumeric().withMessage("Username can only contain alphanumeric characters."),
+
+  body('password').optional().isLength({min:8, max:16}).withMessage("Password is required and should be at least 8 characters long.")
+    .isAlphanumeric().withMessage("Password has to Alphanumeric, no other characters allowed."),
+
+  body('email').optional().isEmail().withMessage("Invalid email."),
+
+  body('birthday').optional().isDate().withMessage("Invalid date, supported date format is YYYY-MM-DD.")
+
+], passport.authenticate('jwt', { session: false }), async (req, res) => {       // UPDATE username for existing users
 /*
+#swagger.security = [{"BearerAuth": []}]
 #swagger.parameters["username"] = {
   in: "path",
   description: "The username of the user.",
   required: true,
   type: "string"
 }
-#swagger.parameters["obj"] = {
-  in: "body",
-  description: "Info fields of the user that can be updated. Fields that are not being updated should be removed from the request body",
-  schema: {
-    "username": "username of the user",
-    "password": "password of the user",
-    "email": "email of the user",
-    "birthday": "Date of birth of the user"
+#swagger.requestBody = {
+  required: false,
+  content: {
+    "application/json": {
+      description: "Info fields of the user that can be updated. Fields that are not being updated should be removed from the request body.",
+      schema: {
+        "data": {
+          "type": "object",
+          "properties": {
+            "username": {
+            "type": "string",
+            "description": "The username of the user."
+            },
+            "password": {
+            "type": "string",
+            "description": "The password of the user."
+            },
+            "email": {
+            "type": "string",
+            "description": "email of the user"
+            },
+            "birthday": {
+            "type": "date",
+            "description": "Date of birth of the user"
+            }
+          }
+        },
+        "example": {
+          "username": "johndoe",
+          "password": "secret",
+          "email": "example@example.com",
+          "birthday" : "1999-09-29"
+        }
+      }
+    }
   }
 }
 #swagger.responses[200] = {
@@ -139,31 +268,49 @@ app.put('/users/:username', passport.authenticate('jwt', { session: false }), as
   }
 }
 */
-  if (req.user.username !== req.params.username) {
-    return res.status(401).send('Permission denied');
-  }
+	if (req.user.username !== req.params.username) {
+		return res.status(401).send("Permission denied");
+	}
 
-  await users.findOneAndUpdate({ username: req.params.username },
-    { $set:
-    {
-      username: req.body.username,
-      password: req.body.password,
-      email: req.body.email,
-      birthday: req.body.birthday
-    }
-  },
-  { new: true })                                                                  // This line makes sure that the updated document is returned
-  .then((updatedUser) => {
-    res.status(200).json(updatedUser);
-  })
-  .catch((error) => {
-    console.error(error);
-    res.status(500).send('Error: ' + error);
-  });
+	let errors = validationResult(req);
+
+	if (!errors.isEmpty()) {
+		return res.status(422).json({ errors: errors.array() });
+	}
+
+	await users
+		.findOneAndUpdate(
+			{ username: req.params.username },
+			{
+				$set: {
+					username: req.body.username,
+					password: req.body.password,
+					email: req.body.email,
+					birthday: req.body.birthday,
+				},
+			},
+			{ new: true }
+		) // This line makes sure that the updated document is returned
+		.then((updatedUser) => {
+			res.status(200).json(updatedUser);
+		})
+		.catch((error) => {
+			console.error(error);
+			res.status(500).send("Error: " + error);
+		});
 });
 
-app.put('/users/:username/:movieID', passport.authenticate('jwt', { session: false }), async (req, res) => {                             // UPDATE favorite movies for existing users
+app.put('/users/:username/:movieID', [
+
+  param('username').isLength({min: 5, max:10}).withMessage("Username is required and should be at least 5 characters long.")
+  .isAlphanumeric().withMessage("Username can only contain alphanumeric characters."),
+
+  param('movieID').notEmpty().withMessage("movieID is required.")
+  .isAlphanumeric().withMessage("movieID can only contain alphanumeric characters.")
+
+], passport.authenticate('jwt', { session: false }), async (req, res) => {                             // UPDATE favorite movies for existing users
 /*
+#swagger.security = [{"BearerAuth": []}]
 #swagger.parameters["username"] = {
   in: "path",
   description: "The username of the user.",
@@ -224,8 +371,17 @@ app.put('/users/:username/:movieID', passport.authenticate('jwt', { session: fal
   });
 });
 
-app.delete('/users/:username/:movieID', passport.authenticate('jwt', { session: false }), async (req, res) => {                             // DELETE favorite movies for existing users
+app.delete('/users/:username/:movieID', [
+
+  param('username').isLength({min: 5, max:10}).withMessage("Username is required and should be at least 5 characters long.")
+    .isAlphanumeric().withMessage("Username can only contain alphanumeric characters."),
+
+  param('movieID').notEmpty().withMessage("movieID is required.")
+  .isAlphanumeric().withMessage("movieID can only contain alphanumeric characters.")
+
+], passport.authenticate('jwt', { session: false }), async (req, res) => {                             // DELETE favorite movies for existing users
 /*
+#swagger.security = [{"BearerAuth": []}]
 #swagger.parameters["username"] = {
   in: "path",
   description: "The username of the user.",
@@ -282,13 +438,34 @@ app.delete('/users/:username/:movieID', passport.authenticate('jwt', { session: 
   });
 });
 
-app.delete('/users', passport.authenticate('jwt', { session: false }), async (req, res) => {                                        // DELETE a user from array
+app.delete('/users',[
+
+  body('username').isLength({min: 5, max:10}).withMessage("Username is required and should be at least 5 characters long.")
+    .isAlphanumeric().withMessage("Username can only contain alphanumeric characters.")
+
+], passport.authenticate('jwt', { session: false }), async (req, res) => {                                        // DELETE a user from array
 /*
-#swagger.parameters["obj"] = {
-  in: "body",
-  description: "Details of the user to be deleted.",
-  schema: {
-    "username": "username of the user to be deleted",
+#swagger.security = [{"BearerAuth": []}]
+#swagger.requestBody = {
+  required: true,
+  content: {
+    "application/json": {
+      description: "Username of the user to be deleted.",
+      schema: {
+        "data": {
+          "type": "object",
+          "properties": {
+            "username": {
+            "type": "string",
+            "description": "The username of the user."
+            }
+          }
+        },
+        "example": {
+          "username": "johndoe"
+        }
+      }
+    }
   }
 }
 #swagger.responses[200] = {
@@ -318,6 +495,7 @@ app.delete('/users', passport.authenticate('jwt', { session: false }), async (re
 
 app.get('/movies/:title', passport.authenticate('jwt', { session: false }), async (req, res) => {                               // Read operation to find a single movie by title
 /*
+#swagger.security = [{"BearerAuth": []}]
 #swagger.parameters["title"] = {
   in: "path",
   description: "The title of the movie.",
@@ -401,8 +579,14 @@ app.get('/movies/:title', passport.authenticate('jwt', { session: false }), asyn
     });
 });
 
-app.get('/movies/director/:directorName', passport.authenticate('jwt', { session: false }), async (req, res) => {                // Read operation to find a director by name
+app.get('/movies/director/:directorName', [
+
+  param('directorName').notEmpty().withMessage("Director name is required.")
+  .matches(/^[a-zA-Z\s]+$/).withMessage("Director name can only contain alphabet characters.")
+  
+], passport.authenticate('jwt', { session: false }), async (req, res) => {                // Read operation to find a director by name
 /*
+#swagger.security = [{"BearerAuth": []}]
 #swagger.parameters["directorName"] = {
   in: "path",
   description: "The name of director.",
@@ -533,8 +717,14 @@ app.get('/movies', passport.authenticate('jwt', { session: false }), async (req,
     });
 });
 
-app.get('/genres/:name', passport.authenticate('jwt', { session: false }), async (req, res) => {                                  // Read operation to get a genre description by name
+app.get('/genres/:name', [
+
+  param('name').notEmpty().withMessage("Genre name is required.")
+  .matches(/^[a-zA-Z\s]+$/).withMessage("Genre name can only contain alphabet characters.")
+
+], passport.authenticate('jwt', { session: false }), async (req, res) => {                                  // Read operation to get a genre description by name
 /*
+#swagger.security = [{"BearerAuth": []}]
 #swagger.parameters["name"] = {
   in: "path",
   description: "The name of genre.",
@@ -573,8 +763,6 @@ app.get('/genres/:name', passport.authenticate('jwt', { session: false }), async
   });
 });
 
-//app.use('/', express.static('public'));                                    // serve the documentation webpage
-
 app.use((err, req, res, next) => {                                          // catch unknown error
 console.error(err.stack);
 res.status(500).send('Something broke!');
@@ -584,6 +772,7 @@ const swaggerDocument = require('./swagger-output.json');
 
 app.use( "/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-app.listen(8080, () => {                                                     // server listening port
-console.log('Your app is listening on port 8080.');
+const port = process.env.PORT || 8080;                                       // server listening port
+app.listen(port, '0.0.0.0',() => {
+ console.log('Listening on Port ' + port);
 });

@@ -6,8 +6,8 @@ const doc = {
     version: "2.0.0",
     description: "This is a simple CRUD API application that serves movie data, made with Express and documented with Swagger",
   },
-  host: 'localhost:8080',
-  schemes: ['http'],
+  host: 'high-triode-348322.lm.r.appspot.com',
+  schemes: ['https'],
   components:{
     securitySchemes: {
       BearerAuth: {
