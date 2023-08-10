@@ -1,4 +1,0 @@
-runtime: nodejs20
-
-env_variables:
-  CONNECTION_URI: "mongodb+srv://t22n84r:qGhEBHK6DTeAHpVm@cluster0.nrxb6zw.mongodb.net/myFlixDB?retryWrites=true&w=majority"
