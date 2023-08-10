@@ -15,6 +15,7 @@ This is the server-side component of a “movies” web application. This simple
 - Allow existing users to deregister
 
 ## Technologies used
+
 - NodeJS
 - Express
 - MongoDB
