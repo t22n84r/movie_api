@@ -1,7 +1,8 @@
 const jwtSecret = '3785X@Q7YZWd5aet'                                    // This has to be the same key used in the JWTStrategy
 
 const jwt = require('jsonwebtoken'),
-      passport = require('passport');
+      passport = require('passport'),
+      {check, validationResult, body, param} = require('express-validator');
 
 require('./passport.js');
 
@@ -15,7 +16,13 @@ let generateJWTtoken = (user) => {
 
 
 module.exports = (router) => {
-    router.post('/login', (req, res) => {
+    router.post('/login', [
+        body('username').isLength({min: 5, max:10}).withMessage("Username is required and should be at least 5 characters long.")
+        .isAlphanumeric().withMessage("Username can only contain alphanumeric characters."),
+
+        body('password').isLength({min:8, max:16}).withMessage("Password is required and should be at least 8 characters long.")
+        .isAlphanumeric().withMessage("Password has to be Alphanumeric, no other characters allowed.")
+    ], (req, res) => {
     /*
     #swagger.requestBody = {
         required: true,
@@ -44,14 +51,27 @@ module.exports = (router) => {
             }
         }
     }
-    */
+    */  
+        let errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+        return res.status(422).json({ errors: errors.array() });
+        }
+        
         passport.authenticate('local', {session: false}, (error, user, info) => {
-            if (error || !user) {
+            if (error) {
                 return res.status(400).json({
-                    message: 'Something is not right',
-                    user: user
+                  message: 'An error occurred',
+                  error: error,
                 });
             }
+              
+            if (!user) {
+            return res.status(400).json({
+                message: 'Authentication failed',
+            });
+            }
+
             req.login(user, {session: false}, (error) => {
                 if (error) {
                     res.send(error);

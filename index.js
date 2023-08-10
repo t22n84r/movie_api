@@ -12,7 +12,7 @@ const express = require('express'),
 const movies = Models.Movie;
 const users = Models.User;
 
-/*let allowedOrigins = ['http://localhost:8080', 'http://testsite.com'];
+/*let allowedOrigins = ['http://localhost:8080', 'http://testsite.com'];                                // CORS implementation 
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -27,14 +27,13 @@ app.use(cors({
   }
 }));*/
 
-app.use(cors({
+app.use(cors({                                                                                          // Allow requests from all origins
   origin: (origin, callback) => {
-    // Allow requests from all origins
     callback(null, true);
   }
 }));
 
-mongoose.connect( process.env.CONNECTION_URI , { 
+mongoose.connect( process.env.CONNECTION_URI , {                                                        // DB connection
   useNewUrlParser: true, useUnifiedTopology: true 
 })   .then(() => {
   console.log('Connected to MongoDB Atlas.');
@@ -47,19 +46,19 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
-let auth = require('./auth.js')(app)
+let auth = require('./auth.js')(app)                                                                    // passport initialize
 const passport = require('passport');
 require('./passport.js')
 
-app.use(morgan('common'));
+app.use(morgan('common'));                                                                              // morgan logging
 
-app.post('/users', [
+app.post('/users', [                                                                                    // Create operation for adding new user
 
   body('username').isLength({min: 5, max:10}).withMessage("Username is required and should be at least 5 characters long.")
     .isAlphanumeric().withMessage("Username can only contain alphanumeric characters."),
 
   body('password').isLength({min:8, max:16}).withMessage("Password is required and should be at least 8 characters long.")
-    .isAlphanumeric().withMessage("Password has to Alphanumeric, no other characters allowed."),
+    .isAlphanumeric().withMessage("Password has to be Alphanumeric, no other characters allowed."),
 
   body('confirmPassword').notEmpty().withMessage("Please confirm your password.")
   .custom((value, { req }) => {
@@ -73,7 +72,7 @@ app.post('/users', [
 
   body('birthday').isDate().withMessage("Invalid date, supported date format is YYYY-MM-DD.")
 
-], async (req, res) => {                                      // Create operation for adding new user
+], async (req, res) => {
 /*
 #swagger.requestBody = {
   required: true,
@@ -154,6 +153,8 @@ app.post('/users', [
     return res.status(422).json({ errors: errors.array() });
   }
 
+  let hashedPassword = users.hashPassword(req.body.password);
+
   await users.findOne({ username: req.body.username })
     .then((user) => {
       if (user) {
@@ -162,7 +163,7 @@ app.post('/users', [
         users
           .create({
             username: req.body.username,
-            password: req.body.password,
+            password: hashedPassword,
             email: req.body.email,
             birthday: req.body.birthday
           })
@@ -179,7 +180,7 @@ app.post('/users', [
     });
 });
 
-app.put('/users/:username', [
+app.put('/users/:username', [                                                                          // UPDATE user details for existing users
 
   body('username').optional().isLength({min: 5, max:10}).withMessage("Username is required and should be at least 5 characters long.")
     .isAlphanumeric().withMessage("Username can only contain alphanumeric characters."),
@@ -187,11 +188,18 @@ app.put('/users/:username', [
   body('password').optional().isLength({min:8, max:16}).withMessage("Password is required and should be at least 8 characters long.")
     .isAlphanumeric().withMessage("Password has to Alphanumeric, no other characters allowed."),
 
+  body('confirmPassword').optional().custom((value, { req }) => {
+    if (value !== req.body.password) {
+      throw new Error('Confirm password does not match.');
+    }
+    return true;
+  }),
+
   body('email').optional().isEmail().withMessage("Invalid email."),
 
   body('birthday').optional().isDate().withMessage("Invalid date, supported date format is YYYY-MM-DD.")
 
-], passport.authenticate('jwt', { session: false }), async (req, res) => {       // UPDATE username for existing users
+], passport.authenticate('jwt', { session: false }), async (req, res) => {
 /*
 #swagger.security = [{"BearerAuth": []}]
 #swagger.parameters["username"] = {
@@ -217,6 +225,10 @@ app.put('/users/:username', [
             "type": "string",
             "description": "The password of the user."
             },
+            "confirmPassword": {
+            "type": "string",
+            "description": "The password again for confirmation."
+            },
             "email": {
             "type": "string",
             "description": "email of the user"
@@ -230,6 +242,7 @@ app.put('/users/:username', [
         "example": {
           "username": "johndoe",
           "password": "secret",
+          "confirmPassword": "secret",
           "email": "example@example.com",
           "birthday" : "1999-09-29"
         }
@@ -278,19 +291,29 @@ app.put('/users/:username', [
 		return res.status(422).json({ errors: errors.array() });
 	}
 
+  let hashedPassword;
+
+  if (req.body.password) {   
+    if (req.body.password !== req.body.confirmPassword) {
+      return res.status(422).json({ errors: [{ msg: 'Password and confirm password do not match.' }] });
+    } else {
+      hashedPassword = users.hashPassword(req.body.password);
+    }
+  }
+
 	await users
 		.findOneAndUpdate(
 			{ username: req.params.username },
 			{
 				$set: {
 					username: req.body.username,
-					password: req.body.password,
+					password: hashedPassword,
 					email: req.body.email,
 					birthday: req.body.birthday,
 				},
 			},
-			{ new: true }
-		) // This line makes sure that the updated document is returned
+			{ new: true }                                                           // This line makes sure that the updated document is returned
+		)
 		.then((updatedUser) => {
 			res.status(200).json(updatedUser);
 		})
@@ -300,7 +323,7 @@ app.put('/users/:username', [
 		});
 });
 
-app.put('/users/:username/:movieID', [
+app.put('/users/:username/:movieID', [                                                          // UPDATE favorite movies for existing users
 
   param('username').isLength({min: 5, max:10}).withMessage("Username is required and should be at least 5 characters long.")
   .isAlphanumeric().withMessage("Username can only contain alphanumeric characters."),
@@ -308,7 +331,7 @@ app.put('/users/:username/:movieID', [
   param('movieID').notEmpty().withMessage("movieID is required.")
   .isAlphanumeric().withMessage("movieID can only contain alphanumeric characters.")
 
-], passport.authenticate('jwt', { session: false }), async (req, res) => {                             // UPDATE favorite movies for existing users
+], passport.authenticate('jwt', { session: false }), async (req, res) => {
 /*
 #swagger.security = [{"BearerAuth": []}]
 #swagger.parameters["username"] = {
@@ -361,7 +384,7 @@ app.put('/users/:username/:movieID', [
   await users.findOneAndUpdate({ username: req.params.username }, {
     $addToSet: { favoriteMovies: req.params.movieID }
   },
-  { new: true })                                                                 // This line makes sure that the updated document is returned
+  { new: true })                                                                              // This line makes sure that the updated document is returned
  .then((updatedUser) => {
    res.status(200).json(updatedUser);
   })
@@ -371,7 +394,7 @@ app.put('/users/:username/:movieID', [
   });
 });
 
-app.delete('/users/:username/:movieID', [
+app.delete('/users/:username/:movieID', [                                                   // DELETE favorite movies for existing users
 
   param('username').isLength({min: 5, max:10}).withMessage("Username is required and should be at least 5 characters long.")
     .isAlphanumeric().withMessage("Username can only contain alphanumeric characters."),
@@ -379,7 +402,7 @@ app.delete('/users/:username/:movieID', [
   param('movieID').notEmpty().withMessage("movieID is required.")
   .isAlphanumeric().withMessage("movieID can only contain alphanumeric characters.")
 
-], passport.authenticate('jwt', { session: false }), async (req, res) => {                             // DELETE favorite movies for existing users
+], passport.authenticate('jwt', { session: false }), async (req, res) => {
 /*
 #swagger.security = [{"BearerAuth": []}]
 #swagger.parameters["username"] = {
@@ -438,12 +461,12 @@ app.delete('/users/:username/:movieID', [
   });
 });
 
-app.delete('/users',[
+app.delete('/users',[                                                                       // DELETE a user from array
 
   body('username').isLength({min: 5, max:10}).withMessage("Username is required and should be at least 5 characters long.")
     .isAlphanumeric().withMessage("Username can only contain alphanumeric characters.")
 
-], passport.authenticate('jwt', { session: false }), async (req, res) => {                                        // DELETE a user from array
+], passport.authenticate('jwt', { session: false }), async (req, res) => {
 /*
 #swagger.security = [{"BearerAuth": []}]
 #swagger.requestBody = {
@@ -479,6 +502,12 @@ app.delete('/users',[
     return res.status(401).send('Permission denied');
   }
 
+  let errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+
   await users.findOneAndRemove({ username: req.body.username })
     .then((user) => {
       if (!user) {
@@ -493,7 +522,7 @@ app.delete('/users',[
     });
 });
 
-app.get('/movies/:title', passport.authenticate('jwt', { session: false }), async (req, res) => {                               // Read operation to find a single movie by title
+app.get('/movies/:title', passport.authenticate('jwt', { session: false }), async (req, res) => {          // Read operation to find a single movie by title
 /*
 #swagger.security = [{"BearerAuth": []}]
 #swagger.parameters["title"] = {
@@ -620,6 +649,13 @@ app.get('/movies/director/:directorName', [
   }
 }
 */
+
+  let errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+
   const {directorName} = req.params;
 
   await movies.findOne ({ 'director.name':directorName })
@@ -633,7 +669,7 @@ app.get('/movies/director/:directorName', [
     });
 });
 
-app.get('/movies', passport.authenticate('jwt', { session: false }), async (req, res) => {                                        // Read opeartion to get all movies in the database
+app.get('/movies', passport.authenticate('jwt', { session: false }), async (req, res) => {                                        // Read operation to get all movies in the database
 /*
 #swagger.security = [{"BearerAuth": []}]
 #swagger.responses[200] = {
@@ -750,6 +786,12 @@ app.get('/genres/:name', [
   }
 }
 */
+  let errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+
   const {name} = req.params;
 
   await movies.findOne ({ 'genre.name': name })
@@ -763,16 +805,16 @@ app.get('/genres/:name', [
   });
 });
 
-app.use((err, req, res, next) => {                                          // catch unknown error
+app.use((err, req, res, next) => {                                                        // catch unknown error
 console.error(err.stack);
 res.status(500).send('Something broke!');
 });
 
-const swaggerDocument = require('./swagger-output.json');
+const swaggerDocument = require('./swagger-output.json');                                 // swagger config
 
 app.use( "/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-const port = process.env.PORT || 8080;                                       // server listening port
+const port = process.env.PORT || 8080;                                                    // server listening port
 app.listen(port, '0.0.0.0',() => {
  console.log('Listening on Port ' + port);
 });

@@ -1,6 +1,6 @@
 {
   "name": "movie_api",
-  "version": "3.0.0",
+  "version": "3.0.2",
   "description": "The web application will provide users with access to information about different movies, directors and genres.",
   "main": "index.js",
   "scripts": {
