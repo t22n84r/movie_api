@@ -669,7 +669,7 @@ app.get('/movies/director/:directorName', [
     });
 });
 
-app.get('/movies', async (req, res) => {                                        // Read operation to get all movies in the database
+app.get('/movies', passport.authenticate('jwt', { session: false }), async (req, res) => {                                        // Read operation to get all movies in the database
 /*
 #swagger.security = [{"BearerAuth": []}]
 #swagger.responses[200] = {
