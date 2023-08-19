@@ -222,11 +222,11 @@
                   "properties": {
                     "username": {
                       "type": "string",
-                      "description": "The username of the user."
+                      "description": "The username of the user. (isLength({min: 5, max:10}) & isAlphanumeric())"
                     },
                     "password": {
                       "type": "string",
-                      "description": "The password of the user."
+                      "description": "The password of the user. (isLength({min: 8, max:16}) & isAlphanumeric())"
                     },
                     "confirmPassword": {
                       "type": "string",
@@ -238,7 +238,7 @@
                     },
                     "birthday": {
                       "type": "date",
-                      "description": "Date of birth of the user"
+                      "description": "Date of birth of the user, supported date format is YYYY-MM-DD."
                     }
                   }
                 },
@@ -282,7 +282,7 @@
           "required": true,
           "content": {
             "application/json": {
-              "description": "Username of the user to be deleted.",
+              "description": "Username of the user to be deleted. (isLength({min: 5, max:10}) & isAlphanumeric())",
               "schema": {
                 "data": {
                   "type": "object",
@@ -526,11 +526,11 @@
                   "properties": {
                     "username": {
                       "type": "string",
-                      "description": "The username of the user."
+                      "description": "The username of the user. (isLength({min: 5, max:10}) & isAlphanumeric())"
                     },
                     "password": {
                       "type": "string",
-                      "description": "The password of the user."
+                      "description": "The password of the user. (isLength({min: 8, max:16}) & isAlphanumeric())"
                     },
                     "confirmPassword": {
                       "type": "string",
@@ -542,7 +542,7 @@
                     },
                     "birthday": {
                       "type": "date",
-                      "description": "Date of birth of the user"
+                      "description": "Date of birth of the user, supported date format is YYYY-MM-DD."
                     }
                   }
                 },
@@ -570,7 +570,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "The username of the user."
+            "description": "The username of the user. (isLength({min: 5, max:10}) & isAlphanumeric())"
           },
           {
             "name": "movieID",
@@ -579,7 +579,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "ID of the movie that needs to be added"
+            "description": "ID of the movie that needs to be added (isAlphanumeric())"
           }
         ],
         "responses": {
@@ -789,7 +789,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "The username of the user."
+            "description": "The username of the user. (isLength({min: 5, max:10}) & isAlphanumeric())"
           },
           {
             "name": "movieID",
@@ -798,7 +798,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "ID of the movie that needs to be deleted."
+            "description": "ID of the movie that needs to be deleted. (isAlphanumeric())"
           }
         ],
         "responses": {
@@ -2264,11 +2264,11 @@
                   "properties": {
                     "username": {
                       "type": "string",
-                      "description": "The username of the user."
+                      "description": "The username of the user. (isLength({min: 5, max:10}) & isAlphanumeric())"
                     },
                     "password": {
                       "type": "string",
-                      "description": "The password of the user."
+                      "description": "The password of the user. (isLength({min:8, max:16}) & isAlphanumeric())"
                     }
                   }
                 },
