@@ -1102,11 +1102,20 @@
                                           "properties": {
                                             "type": {
                                               "type": "string",
-                                              "example": "string"
+                                              "example": "array"
                                             },
-                                            "description": {
-                                              "type": "string",
-                                              "example": "The birthyear of the director."
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "type": {
+                                                  "type": "string",
+                                                  "example": "string"
+                                                },
+                                                "description": {
+                                                  "type": "string",
+                                                  "example": "The birthyear of the director."
+                                                }
+                                              }
                                             }
                                           }
                                         },
@@ -1302,11 +1311,20 @@
                                           "properties": {
                                             "type": {
                                               "type": "string",
-                                              "example": "string"
+                                              "example": "array"
                                             },
-                                            "description": {
-                                              "type": "string",
-                                              "example": "The birthyear of the director."
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "type": {
+                                                  "type": "string",
+                                                  "example": "string"
+                                                },
+                                                "description": {
+                                                  "type": "string",
+                                                  "example": "The birthyear of the director."
+                                                }
+                                              }
                                             }
                                           }
                                         },
@@ -1490,11 +1508,20 @@
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "example": "string"
+                                  "example": "array"
                                 },
-                                "description": {
-                                  "type": "string",
-                                  "example": "The birthyear of the director."
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "example": "string"
+                                    },
+                                    "description": {
+                                      "type": "string",
+                                      "example": "The birthyear of the director."
+                                    }
+                                  }
                                 }
                               }
                             },
@@ -1566,11 +1593,20 @@
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "example": "string"
+                                  "example": "array"
                                 },
-                                "description": {
-                                  "type": "string",
-                                  "example": "The birthyear of the director."
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "example": "string"
+                                    },
+                                    "description": {
+                                      "type": "string",
+                                      "example": "The birthyear of the director."
+                                    }
+                                  }
                                 }
                               }
                             },
@@ -1715,11 +1751,20 @@
                                               "properties": {
                                                 "type": {
                                                   "type": "string",
-                                                  "example": "string"
+                                                  "example": "array"
                                                 },
-                                                "description": {
-                                                  "type": "string",
-                                                  "example": "The birthyear of the director."
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "type": {
+                                                      "type": "string",
+                                                      "example": "string"
+                                                    },
+                                                    "description": {
+                                                      "type": "string",
+                                                      "example": "The birthyear of the director."
+                                                    }
+                                                  }
                                                 }
                                               }
                                             },
@@ -1924,11 +1969,20 @@
                                               "properties": {
                                                 "type": {
                                                   "type": "string",
-                                                  "example": "string"
+                                                  "example": "array"
                                                 },
-                                                "description": {
-                                                  "type": "string",
-                                                  "example": "The birthyear of the director."
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "type": {
+                                                      "type": "string",
+                                                      "example": "string"
+                                                    },
+                                                    "description": {
+                                                      "type": "string",
+                                                      "example": "The birthyear of the director."
+                                                    }
+                                                  }
                                                 }
                                               }
                                             },

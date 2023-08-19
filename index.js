@@ -558,13 +558,13 @@ app.get('/movies/:title', passport.authenticate('jwt', { session: false }), asyn
                 "type": "string",
                 "description": "A brief biography of the director."
               },
-              "birthyear": [{
+              "birthyear": {
                 "type": "array",
                 "items": {
-                "type": "string"
+                "type": "string",
                 "description": "The birthyear of the director."
                 }
-              }],
+              },
               "deathyear": {
                 "type": "string",
                 "description": "The deathyear of the director."
@@ -639,13 +639,13 @@ app.get('/movies/director/:directorName', [
           "type": "string",
           "description": "A brief life history of the director."
         },
-        "birthyear": [{
+        "birthyear": {
           "type": "array",
           "items": {
-          "type": "string"
+          "type": "string",
           "description": "The birthyear of the director."
           }
-        }],
+        },
         "deathyear": {
           "type": "string",
           "description": "The deathyear of the director."
@@ -707,13 +707,13 @@ app.get('/movies', passport.authenticate('jwt', { session: false }), async (req,
                   "type": "string",
                   "description": "A brief biography of the director."
                 },
-                "birthyear": [{
+                "birthyear": {
                   "type": "array",
                   "items": {
-                  "type": "string"
+                  "type": "string",
                   "description": "The birthyear of the director."
                   }
-                }],
+                },
                 "deathyear": {
                   "type": "string",
                   "description": "The deathyear of the director."
