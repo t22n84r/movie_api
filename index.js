@@ -85,11 +85,11 @@ app.post('/users', [                                                            
           "properties": {
             "username": {
             "type": "string",
-            "description": "The username of the user."
+            "description": "The username of the user. (isLength({min: 5, max:10}) & isAlphanumeric())"
             },
             "password": {
             "type": "string",
-            "description": "The password of the user."
+            "description": "The password of the user. (isLength({min: 8, max:16}) & isAlphanumeric())"
             },
             "confirmPassword": {
             "type": "string",
@@ -101,7 +101,7 @@ app.post('/users', [                                                            
             },
             "birthday": {
             "type": "date",
-            "description": "Date of birth of the user"
+            "description": "Date of birth of the user, supported date format is YYYY-MM-DD."
             }
           }
         },
@@ -219,11 +219,11 @@ app.put('/users/:username', [                                                   
           "properties": {
             "username": {
             "type": "string",
-            "description": "The username of the user."
+            "description": "The username of the user. (isLength({min: 5, max:10}) & isAlphanumeric())"
             },
             "password": {
             "type": "string",
-            "description": "The password of the user."
+            "description": "The password of the user. (isLength({min: 8, max:16}) & isAlphanumeric())"
             },
             "confirmPassword": {
             "type": "string",
@@ -235,7 +235,7 @@ app.put('/users/:username', [                                                   
             },
             "birthday": {
             "type": "date",
-            "description": "Date of birth of the user"
+            "description": "Date of birth of the user, supported date format is YYYY-MM-DD."
             }
           }
         },
@@ -336,13 +336,13 @@ app.put('/users/:username/:movieID', [                                          
 #swagger.security = [{"BearerAuth": []}]
 #swagger.parameters["username"] = {
   in: "path",
-  description: "The username of the user.",
+  description: "The username of the user. (isLength({min: 5, max:10}) & isAlphanumeric())",
   required: true,
   type: "string"
 }
 #swagger.parameters["movieID"] = {
   in: "path",
-  description: "ID of the movie that needs to be added",
+  description: "ID of the movie that needs to be added (isAlphanumeric())",
   required: true,
   type: "string"
 }
@@ -407,13 +407,13 @@ app.delete('/users/:username/:movieID', [                                       
 #swagger.security = [{"BearerAuth": []}]
 #swagger.parameters["username"] = {
   in: "path",
-  description: "The username of the user.",
+  description: "The username of the user. (isLength({min: 5, max:10}) & isAlphanumeric())",
   required: true,
   type: "string"
 }
 #swagger.parameters["movieID"] = {
   in: "path",
-  description: "ID of the movie that needs to be deleted.",
+  description: "ID of the movie that needs to be deleted. (isAlphanumeric())",
   required: true,
   type: "string"
 }
@@ -473,7 +473,7 @@ app.delete('/users',[                                                           
   required: true,
   content: {
     "application/json": {
-      description: "Username of the user to be deleted.",
+      description: "Username of the user to be deleted. (isLength({min: 5, max:10}) & isAlphanumeric())",
       schema: {
         "data": {
           "type": "object",

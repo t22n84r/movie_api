@@ -35,11 +35,11 @@ module.exports = (router) => {
                         "properties": {
                             "username": {
                             "type": "string",
-                            "description": "The username of the user."
+                            "description": "The username of the user. (isLength({min: 5, max:10}) & isAlphanumeric())"
                             },
                             "password": {
                             "type": "string",
-                            "description": "The password of the user."
+                            "description": "The password of the user. (isLength({min:8, max:16}) & isAlphanumeric())"
                             }
                         }
                     },
