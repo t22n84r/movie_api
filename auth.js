@@ -77,7 +77,17 @@ module.exports = (router) => {
                     res.send(error);
                 }
                 let token = generateJWTtoken(user.toJSON());
-                return res.json({user: user, token: token});
+                const { _id, username, email, birthday, favoriteMovies } = user;
+                return res.json({
+                    user: {
+                        _id,
+                        username,
+                        email,
+                        birthday,
+                        favoriteMovies
+                    }, 
+                    token: token
+                });
             });
         })(req, res);
     });
